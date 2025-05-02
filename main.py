@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import os
 from google.cloud import vision
+from PIL import ImageDraw, ImageFont
+import textwrap
 
 
 load_dotenv()
@@ -46,13 +48,17 @@ def trans(text):
         messages=[
             {
                 "role": "user",
-                "content": "あなたは日本語の文章を英語に翻訳するプロの翻訳者です。以下の日本語の文章を英語に翻訳してください。翻訳結果以外は一切必要ありません。\n\n"
+                "content": "あなたは日本語の文章を英語に翻訳するプロの翻訳者です。以下の日本語の文章を英語に翻訳してください。翻訳結果以外は一切必要ありません。なお翻訳する文章が無い時は""と出力しなさい\n\n"
                 + text,
             }
         ],
     )
     return completion.choices[0].message.content
 
+
+
+draw = ImageDraw.Draw(img1)
+font = ImageFont.load_default()
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 client = vision.ImageAnnotatorClient()
@@ -68,6 +74,8 @@ for page in response.full_text_annotation.pages:
                 word_text = ''.join([symbol.text for symbol in word.symbols])
                 block_text += word_text + ' '
         block_text = block_text.strip()
+        if len(block_text) < 6 and "+" in block_text:
+            continue
         print(block_text)
         translated_text = trans(block_text)
         print(translated_text)
@@ -75,3 +83,5 @@ for page in response.full_text_annotation.pages:
         print(vertices)
         print("-" * 20)
 
+img1.save("translated_image.png")
+img1.show()
