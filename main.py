@@ -39,14 +39,27 @@ result = re.findall(pattern, txt1)
 result = "".join(result)
 
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
+def trans(text):
+    client = OpenAI()
+    completion = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[
+            {
+                "role": "user",
+                "content": "あなたは日本語の文章を英語に翻訳するプロの翻訳者です。以下の日本語の文章を英語に翻訳してください。翻訳結果以外は一切必要ありません。\n\n"
+                + text,
+            }
+        ],
+    )
+    return completion.choices[0].message.content
 
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 client = vision.ImageAnnotatorClient()
 with open(file_name, "rb") as image_file:
     content = image_file.read()
 image = vision.Image(content=content)
 response = client.text_detection(image=image)
-
 for page in response.full_text_annotation.pages:
     for block in page.blocks:
         block_text = ""
@@ -54,25 +67,11 @@ for page in response.full_text_annotation.pages:
             for word in paragraph.words:
                 word_text = ''.join([symbol.text for symbol in word.symbols])
                 block_text += word_text + ' '
-        print("Block:")
-        print(block_text.strip())
+        block_text = block_text.strip()
+        print(block_text)
+        translated_text = trans(block_text)
+        print(translated_text)
         vertices = block.bounding_box.vertices
         print(vertices)
         print("-" * 20)
 
-"""
-client = OpenAI()
-completion = client.chat.completions.create(
-    model="gpt-4.1",
-    messages=[
-        {
-            "role": "user",
-            "content": "あなたは日本語の文章を英語に翻訳するプロの翻訳者です。以下の日本語の文章を英語に翻訳してください。翻訳結果以外は一切必要ありません。\n\n"
-            + result,
-        }
-    ],
-)
-print()
-print(completion.choices[0].message.content)
-
-"""
