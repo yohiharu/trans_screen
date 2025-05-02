@@ -11,7 +11,7 @@ import textwrap
 from PIL import ImageFont
 
 font_path = "C:/Windows/Fonts/meiryo.ttc"
-font_size = 18
+font_size = 14
 font = ImageFont.truetype(font_path, font_size)
 
 
@@ -42,7 +42,7 @@ pyocr.tesseract.TESSERACT_CMD = (
 tools = pyocr.get_available_tools()
 tool = tools[0]
 txt1 = tool.image_to_string(
-    img1, lang="jpn+eng", builder=pyocr.builders.TextBuilder(tesseract_layout=6)
+    img1, lang="jpn+eng", builder=pyocr.builders.TextBuilder(tesseract_layout=5)
 )
 pattern = r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\u3000 a-zA-Z0-9。、,\.]"
 result = re.findall(pattern, txt1)
@@ -77,9 +77,10 @@ print("画像の高さ:", height)
 
 
 
+img1 = img1.convert("RGBA")
 
 
-draw = ImageDraw.Draw(img1)
+draw = ImageDraw.Draw(img1, "RGBA")
 
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
@@ -114,7 +115,7 @@ for page in response.full_text_annotation.pages:
                 (vertices[1].x, vertices[1].y),
                 (vertices[2].x, vertices[2].y),
                 (vertices[3].x, vertices[3].y)
-            ], outline="red", width=1)
+            ], fill=  (255, 255, 0) ,outline="yellow", width=1)
 
             # 描画位置と幅
             x = vertices[0].x
@@ -122,7 +123,7 @@ for page in response.full_text_annotation.pages:
             max_width = vertices[1].x - vertices[0].x
 
             # 折り返し
-            wrapped_text = textwrap.fill(translated_text, width=max(1, int(max_width /10)))  # 文字幅調整
+            wrapped_text = textwrap.fill(translated_text, width=max(1, int(max_width /8)))  # 文字幅調整
             draw.multiline_text((x, max(y, 0)), wrapped_text, fill="blue", font=font)
 
 
