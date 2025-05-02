@@ -8,9 +8,16 @@ import os
 from google.cloud import vision
 from PIL import ImageDraw, ImageFont
 import textwrap
+from PIL import ImageFont
+
+font_path = "C:/Windows/Fonts/meiryo.ttc"
+font_size = 18
+font = ImageFont.truetype(font_path, font_size)
 
 
 load_dotenv()
+
+
 
 
 
@@ -22,6 +29,7 @@ pyautogui.screenshot(
     region=(0, int(wh.height / 10), int(wh.width / 2), int(wh.height * 8 / 10)),
 )
 img1 = Image.open(file_name)
+
 
 
 
@@ -41,6 +49,10 @@ result = re.findall(pattern, txt1)
 result = "".join(result)
 
 
+
+
+
+
 def trans(text):
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -57,8 +69,18 @@ def trans(text):
 
 
 
+
+img = Image.open("my_screenshot.png")
+width, height = img.size
+print("画像の幅:", width)
+print("画像の高さ:", height)
+
+
+
+
+
 draw = ImageDraw.Draw(img1)
-font = ImageFont.load_default()
+
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./key.json"
 client = vision.ImageAnnotatorClient()
@@ -78,10 +100,36 @@ for page in response.full_text_annotation.pages:
             continue
         print(block_text)
         translated_text = trans(block_text)
+
         print(translated_text)
         vertices = block.bounding_box.vertices
         print(vertices)
         print("-" * 20)
+        #-------------
+        # 座標取得
+        if len(vertices) == 4:
+            # 矩形の描画
+            draw.polygon([
+                (vertices[0].x, vertices[0].y),
+                (vertices[1].x, vertices[1].y),
+                (vertices[2].x, vertices[2].y),
+                (vertices[3].x, vertices[3].y)
+            ], outline="red", width=1)
+
+            # 描画位置と幅
+            x = vertices[0].x
+            y = vertices[0].y - 6  # テキストを枠の上に描く（ずれる場合は調整）
+            max_width = vertices[1].x - vertices[0].x
+
+            # 折り返し
+            wrapped_text = textwrap.fill(translated_text, width=max(1, int(max_width /10)))  # 文字幅調整
+            draw.multiline_text((x, max(y, 0)), wrapped_text, fill="blue", font=font)
+
+
+
+
+
+
 
 img1.save("translated_image.png")
 img1.show()
